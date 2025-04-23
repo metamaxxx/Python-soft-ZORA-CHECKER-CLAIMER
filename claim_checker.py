@@ -4,6 +4,7 @@ import json
 from dotenv import load_dotenv
 import os
 import time
+import random
 from eth_account.messages import encode_defunct
 from datetime import datetime, timedelta
 
@@ -13,6 +14,10 @@ load_dotenv()
 # Настройка подключения к Base
 RPC_URL = "https://base-rpc.publicnode.com"
 web3 = Web3(Web3.HTTPProvider(RPC_URL))
+
+# Настройки задержки между транзакциями (в секундах)
+MIN_DELAY = 5
+MAX_DELAY = 10
 
 # Адрес контракта
 CONTRACT_ADDRESS = "0x0000000002ba96c69b95e32caab8fc38bab8b3f8"
@@ -187,7 +192,11 @@ def claim_all_tokens():
         else:
             print(f"{result['address']:<45} | Ошибка: {result['error']}")
         
-        time.sleep(0.1)  # Задержка между транзакциями
+        # Случайная задержка между транзакциями
+        if wallet != wallets[-1]:  # Не делаем задержку после последнего кошелька
+            delay = random.uniform(MIN_DELAY, MAX_DELAY)
+            print(f"\nОжидаем {delay:.1f} секунд перед следующей транзакцией...")
+            time.sleep(delay)
     
     print("-" * 130)
 
@@ -197,9 +206,10 @@ def main():
         print("2. Проверить аллокацию одного кошелька")
         print("3. Клеймить токены для одного кошелька")
         print("4. Клеймить токены для всех кошельков")
-        print("5. Выход")
+        print("5. Изменить настройки задержки")
+        print("6. Выход")
         
-        choice = input("\nВыберите действие (1-5): ")
+        choice = input("\nВыберите действие (1-6): ")
         
         if choice == "1":
             check_all_allocations()
@@ -229,6 +239,20 @@ def main():
             claim_all_tokens()
             
         elif choice == "5":
+            global MIN_DELAY, MAX_DELAY
+            try:
+                min_delay = float(input("Введите минимальную задержку (в секундах): "))
+                max_delay = float(input("Введите максимальную задержку (в секундах): "))
+                if min_delay < 0 or max_delay < 0 or min_delay > max_delay:
+                    print("\nОшибка: Некорректные значения задержки")
+                else:
+                    MIN_DELAY = min_delay
+                    MAX_DELAY = max_delay
+                    print(f"\nНастройки задержки обновлены: {MIN_DELAY}-{MAX_DELAY} секунд")
+            except ValueError:
+                print("\nОшибка: Введите числовые значения")
+            
+        elif choice == "6":
             break
             
         else:
